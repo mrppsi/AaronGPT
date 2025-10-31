@@ -26,13 +26,18 @@ const client = new Client({
 // ---------------------------
 // Inicializar RiveScript
 const bot = new RiveScript();
-await bot.loadFile("./aaron.rive"); // tu archivo RiveScript
-await bot.sortReplies();
+
+async function initBot() {
+  await bot.loadFile("./aaron.rive"); // tu archivo RiveScript
+  await bot.sortReplies();
+}
+
+initBot().then(() => console.log("RiveScript cargado ✅"));
 
 // ---------------------------
 // Listener !aaron
 client.on("messageCreate", async (message) => {
-  if (message.author.bot) return;
+  if (message.author.bot) return;                       // Ignora bots
   if (!message.content.toLowerCase().startsWith("!aaron")) return;
 
   const pregunta = message.content.slice(6).trim();
@@ -41,6 +46,7 @@ client.on("messageCreate", async (message) => {
   // Respuesta de RiveScript
   const respuesta = await bot.reply("local-user", pregunta);
 
+  // Solo un reply
   message.reply(respuesta);
 });
 
