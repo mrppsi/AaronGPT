@@ -48,13 +48,12 @@ const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
 // ---------------------------
 // Función Hugging Face pública (GPT2)
+// ---------------------------
 async function askHFModel(pregunta) {
   try {
     const res = await fetch("https://api-inference.huggingface.co/models/gpt2", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" }, // ✅ sin token
       body: JSON.stringify({ inputs: pregunta }),
     });
 
