@@ -47,14 +47,12 @@ const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 })();
 
 // ---------------------------
-// Función Hugging Face
-// ---------------------------
+// Función Hugging Face pública (GPT2)
 async function askHFModel(pregunta) {
   try {
-    const res = await fetch("https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct", {
+    const res = await fetch("https://api-inference.huggingface.co/models/gpt2", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.HF_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ inputs: pregunta }),
