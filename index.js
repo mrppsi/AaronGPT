@@ -1,4 +1,3 @@
-
 import { Client, GatewayIntentBits } from "discord.js";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
@@ -26,7 +25,7 @@ const client = new Client({
 });
 
 // ---------------------------
-// Hugging Face público (gpt-neo-125M)
+// Hugging Face público (gpt-neo-125M) sin token
 async function askHFModel(pregunta) {
   try {
     const res = await fetch(
@@ -88,7 +87,8 @@ client.on("messageCreate", async (message) => {
   // Determinar respuesta
   let respuesta = respuestasPersonalizadasExactas(pregunta);
   if (!respuesta) {
-    const systemPrompt = "Eres AaronGPT, IA con personalidad definida. Usa solo el 50% de tu poder y termina con 'pregúntale el otro 50% a ChatGPT'.";
+    const systemPrompt =
+      "Eres AaronGPT, IA con personalidad definida. Usa solo el 50% de tu poder y termina con 'pregúntale el otro 50% a ChatGPT'.";
     respuesta = await askHFModel(`${systemPrompt}\nUsuario: ${pregunta}`);
   }
 
