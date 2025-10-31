@@ -6,7 +6,7 @@ import express from "express";
 dotenv.config();
 
 // ---------------------------
-// Express server para mantener activo
+// Servidor Express para mantener activo
 // ---------------------------
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,7 +14,7 @@ app.get("/", (req, res) => res.send("AaronGPT activo 😎"));
 app.listen(PORT, () => console.log(`Servidor escuchando en puerto ${PORT}`));
 
 // ---------------------------
-// Inicializar cliente Discord
+// Cliente Discord
 // ---------------------------
 const client = new Client({
   intents: [
@@ -25,18 +25,22 @@ const client = new Client({
 });
 
 // ---------------------------
-// Función Hugging Face pública (gpt-neo-125M)
+// Hugging Face público (gpt-neo-125M)
 async function askHFModel(pregunta) {
   try {
-    const res = await fetch("https://api-inference.huggingface.co/models/EleutherAI/gpt-neo-125M", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" }, // sin token, modelo público
-      body: JSON.stringify({ inputs: pregunta }),
-    });
+    const res = await fetch(
+      "https://api-inference.huggingface.co/models/EleutherAI/gpt-neo-125M",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }, // ✅ sin token
+        body: JSON.stringify({ inputs: pregunta }),
+      }
+    );
 
     if (!res.ok) {
       const txt = await res.text();
-      throw new Error(`HF error: ${res.status} ${txt}`);
+      console.error(`HF error: ${res.status} ${txt}`);
+      return "Aaron está ocupado, inténtalo más tarde 😅";
     }
 
     const data = await res.json();
@@ -59,13 +63,7 @@ function maybeAddMuletilla(text) {
 }
 
 // ---------------------------
-// Evento ready
-client.on("ready", () => {
-  console.log(`✅ AaronGPT conectado como ${client.user.tag}`);
-});
-
-// ---------------------------
-// Respuestas predefinidas exactas
+// Respuestas predefinidas
 function respuestasPersonalizadasExactas(mensaje) {
   const lower = mensaje.toLowerCase();
   if (lower === "donde esta aaron" || lower === "dónde está aaron")
@@ -78,27 +76,29 @@ function respuestasPersonalizadasExactas(mensaje) {
 }
 
 // ---------------------------
-// Listener para comandos !aaron
+// Listener !aaron
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
+  if (!message.content.toLowerCase().startsWith("!aaron")) return;
 
-  if (message.content.toLowerCase().startsWith("!aaron")) {
-    const pregunta = message.content.slice(6).trim();
-    if (!pregunta) return message.reply("Escribe algo para preguntarle a Aaron 😎");
+  const pregunta = message.content.slice(6).trim();
+  if (!pregunta) return message.reply("Escribe algo para preguntarle a Aaron 😎");
 
-    // Revisar respuestas predefinidas
-    const respuestaDirecta = respuestasPersonalizadasExactas(pregunta);
-    if (respuestaDirecta) return message.reply(maybeAddMuletilla(respuestaDirecta));
-
-    // Prompt de personalidad
+  // Determinar respuesta
+  let respuesta = respuestasPersonalizadasExactas(pregunta);
+  if (!respuesta) {
     const systemPrompt = "Eres AaronGPT, IA con personalidad definida. Usa solo el 50% de tu poder y termina con 'pregúntale el otro 50% a ChatGPT'.";
-    const respuestaHF = await askHFModel(`${systemPrompt}\nUsuario: ${pregunta}`);
-
-    // Enviar respuesta final
-    return message.reply(maybeAddMuletilla(respuestaHF));
+    respuesta = await askHFModel(`${systemPrompt}\nUsuario: ${pregunta}`);
   }
+
+  // Enviar solo una vez
+  return message.reply(maybeAddMuletilla(respuesta));
 });
 
 // ---------------------------
 // Login Discord
 client.login(process.env.DISCORD_TOKEN);
+
+client.on("ready", () => {
+  console.log(`✅ AaronGPT conectado como ${client.user.tag}`);
+});
