@@ -1,3 +1,4 @@
+
 import { Client, GatewayIntentBits } from "discord.js";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
@@ -6,7 +7,7 @@ import express from "express";
 dotenv.config();
 
 // ---------------------------
-// Servidor Express para mantener activo
+// Servidor Express para Render
 // ---------------------------
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -52,7 +53,7 @@ async function askHFModel(pregunta) {
 }
 
 // ---------------------------
-// Muletillas al 40% de probabilidad
+// Muletillas al 40%
 function maybeAddMuletilla(text) {
   const muletillas = ["mi bro", "compa", "mi pana", "hermano"];
   if (Math.random() < 0.4) {
