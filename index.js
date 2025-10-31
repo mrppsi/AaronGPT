@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.get("/", (req, res) => {
-  res.send("AaronGPT esta vivo 😎");
+  res.send("AaronGPT está vivo 😎");
 });
 
 app.listen(PORT, () => console.log(`Servidor escuchando en puerto ${PORT}`));
@@ -69,10 +69,10 @@ async function askHFModel(pregunta) {
     }
 
     const data = await res.json();
-    return data[0]?.generated_text ?? "AaronGPT está ocupado, pregúntale el otro 50% a aaron.";
+    return data[0]?.generated_text ?? "AaronGPT está ocupado preguntale a aaron.";
   } catch (err) {
     console.error("Error Hugging Face:", err);
-    return "AaronGPT está ocupado, pregúntale el otro 50% a aaron.";
+    return "AaronGPT está ocupado preguntale a aaron.";
   }
 }
 
@@ -80,7 +80,7 @@ async function askHFModel(pregunta) {
 // Muletillas
 // ---------------------------
 function maybeAddMuletilla(text) {
-  const muletillas = ["bro gay", "nigga", "negro", "50% de mi poder"];
+  const muletillas = ["negro", "nigga", "gay", "bro"];
   if (Math.random() < 0.4) {
     const random = muletillas[Math.floor(Math.random() * muletillas.length)];
     return `${text} ${random}`;
@@ -93,7 +93,7 @@ function maybeAddMuletilla(text) {
 // ---------------------------
 function respuestasPersonalizadas(mensaje) {
   const lower = mensaje.toLowerCase();
-  if (lower.includes("donde esta aaron") || lower.includes("dónde está aaron")) return "Aaron está ocupado haciendo el saludo de bustopolis";
+  if (lower.includes("donde esta aaron") || lower.includes("dónde está aaron")) return "Aaron está ocupado haciendo el saludo de bustopolis.";
   if (lower.includes("que es el saludo de bustopolis") || lower.includes("que es el saludo de bustopolis")) return "Preguntale a xiande, él lo inventó.";
   if (lower.includes("quien es xiande") || lower.includes("quien es xiande")) return "un chino.";
   if (lower.includes("en que salon va aaron") || lower.includes("en qué salón va aaron")) return "Aaron va en el salón 221 lo que es apa.";
@@ -105,31 +105,44 @@ function respuestasPersonalizadas(mensaje) {
 // Evento ready
 // ---------------------------
 client.on("ready", () => {
-  console.log(`AaronGPT conectado como ${client.user.tag}`);
+  console.log(`✅ AaronGPT conectado como ${client.user.tag}`);
 });
 
 // ---------------------------
 // Evento interacción (slash command)
-/* Responde a /aaron */
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isCommand()) return;
   if (interaction.commandName === "aaron") {
     const pregunta = interaction.options.getString("pregunta");
 
-    // Respuesta predefinida
     const respuestaDirecta = respuestasPersonalizadas(pregunta);
     if (respuestaDirecta) {
       return interaction.reply(maybeAddMuletilla(respuestaDirecta));
     }
 
-    // Hugging Face
-    const systemPrompt = "Eres AaronGPT, IA carismática con el humor negro que usa solo 50% de su poder. Termina tus respuestas diciendo 'pregúntale el otro 50% a aaron'.";
+    const systemPrompt = "Eres AaronGPT, IA carismática y humor negro que usa solo 50% de su poder. Termina tus respuestas diciendo 'pregúntale el otro 50% a ChatGPT'.";
     const respuestaHF = await askHFModel(`${systemPrompt}\nUsuario: ${pregunta}`);
     await interaction.reply(maybeAddMuletilla(respuestaHF));
   }
 });
 
 // ---------------------------
-// Login Discord
+// Listener para comandos !aaron
+client.on("messageCreate", async (message) => {
+  if (message.author.bot) return;
+
+  if (message.content.startsWith("!aaron")) {
+    const pregunta = message.content.slice(6).trim();
+    if (!pregunta) return message.reply("Escribe algo para preguntarle a AaronGPT.");
+
+    const respuestaDirecta = respuestasPersonalizadas(pregunta);
+    if (respuestaDirecta) return message.reply(maybeAddMuletilla(respuestaDirecta));
+
+    const respuestaHF = await askHFModel(`Eres AaronGPT al 50%. Usuario: ${pregunta}`);
+    message.reply(maybeAddMuletilla(respuestaHF));
+  }
+});
+
 // ---------------------------
+// Login Discord
 client.login(process.env.DISCORD_TOKEN);
