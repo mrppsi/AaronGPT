@@ -21,7 +21,11 @@ app.listen(PORT, () => console.log(`Servidor escuchando en puerto ${PORT}`));
 // Inicializar cliente Discord
 // ---------------------------
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent, // Crucial para !aaron
+  ],
 });
 
 // ---------------------------
@@ -69,18 +73,18 @@ async function askHFModel(pregunta) {
     }
 
     const data = await res.json();
-    return data[0]?.generated_text ?? "AaronGPT está ocupado preguntale a aaron.";
+    return data[0]?.generated_text ?? "Aaron no pudo responder 😅";
   } catch (err) {
     console.error("Error Hugging Face:", err);
-    return "AaronGPT está ocupado preguntale a aaron.";
+    return "Aaron está ocupado, inténtalo más tarde 😅";
   }
 }
 
 // ---------------------------
-// Muletillas
+// Muletillas al 40% de probabilidad
 // ---------------------------
 function maybeAddMuletilla(text) {
-  const muletillas = ["negro", "nigga", "gay", "bro"];
+  const muletillas = ["mi bro", "compa", "mi pana", "hermano"];
   if (Math.random() < 0.4) {
     const random = muletillas[Math.floor(Math.random() * muletillas.length)];
     return `${text} ${random}`;
@@ -93,23 +97,23 @@ function maybeAddMuletilla(text) {
 // ---------------------------
 function respuestasPersonalizadas(mensaje) {
   const lower = mensaje.toLowerCase();
-  if (lower.includes("donde esta aaron") || lower.includes("dónde está aaron")) return "Aaron está ocupado haciendo el saludo de bustopolis.";
-  if (lower.includes("que es el saludo de bustopolis") || lower.includes("que es el saludo de bustopolis")) return "Preguntale a xiande, él lo inventó.";
-  if (lower.includes("quien es xiande") || lower.includes("quien es xiande")) return "un chino.";
-  if (lower.includes("en que salon va aaron") || lower.includes("en qué salón va aaron")) return "Aaron va en el salón 221 lo que es apa.";
-  if (lower.includes("como es aaron") || lower.includes("cómo es aaron")) return "Aaron es un femboy con mucho estilo y le encantan las peliculas bbc gay.";
+  if (lower.includes("donde esta aaron") || lower.includes("dónde está aaron")) 
+    return "Aaron está ocupado viendo una de sus películas favoritas 😎.";
+  if (lower.includes("en que salon va aaron") || lower.includes("en qué salón va aaron")) 
+    return "Aaron va en el salón 221, el más misterioso de todos 📘.";
+  if (lower.includes("como es aaron") || lower.includes("cómo es aaron")) 
+    return "Aaron es un femboy con mucho estilo y le encantan las películas intensas 🎬.";
   return null;
 }
 
 // ---------------------------
 // Evento ready
-// ---------------------------
 client.on("ready", () => {
   console.log(`✅ AaronGPT conectado como ${client.user.tag}`);
 });
 
 // ---------------------------
-// Evento interacción (slash command)
+// Slash command /aaron
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isCommand()) return;
   if (interaction.commandName === "aaron") {
@@ -120,7 +124,7 @@ client.on("interactionCreate", async (interaction) => {
       return interaction.reply(maybeAddMuletilla(respuestaDirecta));
     }
 
-    const systemPrompt = "Eres AaronGPT, IA carismática y humor negro que usa solo 50% de su poder. Termina tus respuestas diciendo 'pregúntale el otro 50% a ChatGPT'.";
+    const systemPrompt = "Eres AaronGPT, IA carismática que usa solo 50% de su poder. Termina tus respuestas diciendo 'pregúntale el otro 50% a ChatGPT'.";
     const respuestaHF = await askHFModel(`${systemPrompt}\nUsuario: ${pregunta}`);
     await interaction.reply(maybeAddMuletilla(respuestaHF));
   }
@@ -131,9 +135,9 @@ client.on("interactionCreate", async (interaction) => {
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
-  if (message.content.startsWith("!aaron")) {
+  if (message.content.toLowerCase().startsWith("!aaron")) {
     const pregunta = message.content.slice(6).trim();
-    if (!pregunta) return message.reply("Escribe algo para preguntarle a AaronGPT.");
+    if (!pregunta) return message.reply("Escribe algo para preguntarle a Aaron 😎");
 
     const respuestaDirecta = respuestasPersonalizadas(pregunta);
     if (respuestaDirecta) return message.reply(maybeAddMuletilla(respuestaDirecta));
