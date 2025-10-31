@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } from "discord.js";
+import { Client, GatewayIntentBits } from "discord.js";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 import express from "express";
@@ -25,35 +25,12 @@ const client = new Client({
 });
 
 // ---------------------------
-// Registrar slash command /aaron
-// ---------------------------
-const commands = [
-  new SlashCommandBuilder()
-    .setName("aaron")
-    .setDescription("Pregunta algo a AaronGPT")
-    .addStringOption(option => option.setName("pregunta").setDescription("Tu pregunta").setRequired(true))
-].map(cmd => cmd.toJSON());
-
-const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
-
-(async () => {
-  try {
-    console.log("Actualizando slash commands...");
-    await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: commands });
-    console.log("Slash commands actualizados ✅");
-  } catch (error) {
-    console.error(error);
-  }
-})();
-
-// ---------------------------
-// Función Hugging Face pública (GPT2)
-// ---------------------------
+// Función Hugging Face pública (gpt-neo-125M)
 async function askHFModel(pregunta) {
   try {
-    const res = await fetch("https://api-inference.huggingface.co/models/gpt2", {
+    const res = await fetch("https://api-inference.huggingface.co/models/EleutherAI/gpt-neo-125M", {
       method: "POST",
-      headers: { "Content-Type": "application/json" }, // ✅ sin token
+      headers: { "Content-Type": "application/json" }, // sin token, modelo público
       body: JSON.stringify({ inputs: pregunta }),
     });
 
@@ -72,7 +49,6 @@ async function askHFModel(pregunta) {
 
 // ---------------------------
 // Muletillas al 40% de probabilidad
-// ---------------------------
 function maybeAddMuletilla(text) {
   const muletillas = ["mi bro", "compa", "mi pana", "hermano"];
   if (Math.random() < 0.4) {
@@ -102,21 +78,6 @@ function respuestasPersonalizadasExactas(mensaje) {
 }
 
 // ---------------------------
-// Slash command /aaron
-client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isCommand()) return;
-  if (interaction.commandName === "aaron") {
-    const pregunta = interaction.options.getString("pregunta");
-    const respuestaDirecta = respuestasPersonalizadasExactas(pregunta);
-    if (respuestaDirecta) return interaction.reply(maybeAddMuletilla(respuestaDirecta));
-
-    const systemPrompt = "Eres AaronGPT, IA con personalidad definida. Usa solo el 50% de tu poder y termina con 'pregúntale el otro 50% a ChatGPT'.";
-    const respuestaHF = await askHFModel(`${systemPrompt}\nUsuario: ${pregunta}`);
-    await interaction.reply(maybeAddMuletilla(respuestaHF));
-  }
-});
-
-// ---------------------------
 // Listener para comandos !aaron
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
@@ -125,11 +86,15 @@ client.on("messageCreate", async (message) => {
     const pregunta = message.content.slice(6).trim();
     if (!pregunta) return message.reply("Escribe algo para preguntarle a Aaron 😎");
 
+    // Revisar respuestas predefinidas
     const respuestaDirecta = respuestasPersonalizadasExactas(pregunta);
     if (respuestaDirecta) return message.reply(maybeAddMuletilla(respuestaDirecta));
 
+    // Prompt de personalidad
     const systemPrompt = "Eres AaronGPT, IA con personalidad definida. Usa solo el 50% de tu poder y termina con 'pregúntale el otro 50% a ChatGPT'.";
     const respuestaHF = await askHFModel(`${systemPrompt}\nUsuario: ${pregunta}`);
+
+    // Enviar respuesta final
     return message.reply(maybeAddMuletilla(respuestaHF));
   }
 });
