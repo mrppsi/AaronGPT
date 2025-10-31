@@ -10,11 +10,7 @@ dotenv.config();
 // ---------------------------
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-app.get("/", (req, res) => {
-  res.send("AaronGPT está vivo 😎");
-});
-
+app.get("/", (req, res) => res.send("AaronGPT activo 😎"));
 app.listen(PORT, () => console.log(`Servidor escuchando en puerto ${PORT}`));
 
 // ---------------------------
@@ -24,7 +20,7 @@ const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent, // Crucial para !aaron
+    GatewayIntentBits.MessageContent,
   ],
 });
 
@@ -43,10 +39,7 @@ const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 (async () => {
   try {
     console.log("Actualizando slash commands...");
-    await rest.put(
-      Routes.applicationCommands(process.env.CLIENT_ID),
-      { body: commands }
-    );
+    await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: commands });
     console.log("Slash commands actualizados ✅");
   } catch (error) {
     console.error(error);
@@ -93,24 +86,23 @@ function maybeAddMuletilla(text) {
 }
 
 // ---------------------------
-// Respuestas predefinidas
-// ---------------------------
-function respuestasPersonalizadas(mensaje) {
-  const lower = mensaje.toLowerCase();
-  if (lower.includes("donde esta aaron") || lower.includes("dónde está aaron")) 
-    return "Aaron está ocupado viendo una de sus películas favoritas 😎.";
-  if (lower.includes("en que salon va aaron") || lower.includes("en qué salón va aaron")) 
-    return "Aaron va en el salón 221, el más misterioso de todos 📘.";
-  if (lower.includes("como es aaron") || lower.includes("cómo es aaron")) 
-    return "Aaron es un femboy con mucho estilo y le encantan las películas intensas 🎬.";
-  return null;
-}
-
-// ---------------------------
 // Evento ready
 client.on("ready", () => {
   console.log(`✅ AaronGPT conectado como ${client.user.tag}`);
 });
+
+// ---------------------------
+// Respuestas predefinidas exactas
+function respuestasPersonalizadasExactas(mensaje) {
+  const lower = mensaje.toLowerCase();
+  if (lower === "donde esta aaron" || lower === "dónde está aaron")
+    return "Aaron está ocupado viendo una de sus películas favoritas 😎";
+  if (lower === "en que salon va aaron" || lower === "en qué salón va aaron")
+    return "Aaron va en el salón 221 📘";
+  if (lower === "como es aaron" || lower === "cómo es aaron")
+    return "Aaron es un femboy con mucho estilo y le encantan las películas intensas 🎬";
+  return null;
+}
 
 // ---------------------------
 // Slash command /aaron
@@ -118,13 +110,10 @@ client.on("interactionCreate", async (interaction) => {
   if (!interaction.isCommand()) return;
   if (interaction.commandName === "aaron") {
     const pregunta = interaction.options.getString("pregunta");
+    const respuestaDirecta = respuestasPersonalizadasExactas(pregunta);
+    if (respuestaDirecta) return interaction.reply(maybeAddMuletilla(respuestaDirecta));
 
-    const respuestaDirecta = respuestasPersonalizadas(pregunta);
-    if (respuestaDirecta) {
-      return interaction.reply(maybeAddMuletilla(respuestaDirecta));
-    }
-
-    const systemPrompt = "Eres AaronGPT, IA carismática que usa solo 50% de su poder. Termina tus respuestas diciendo 'pregúntale el otro 50% a ChatGPT'.";
+    const systemPrompt = "Eres AaronGPT, IA con personalidad definida. Usa solo el 50% de tu poder y termina con 'pregúntale el otro 50% a ChatGPT'.";
     const respuestaHF = await askHFModel(`${systemPrompt}\nUsuario: ${pregunta}`);
     await interaction.reply(maybeAddMuletilla(respuestaHF));
   }
@@ -139,11 +128,12 @@ client.on("messageCreate", async (message) => {
     const pregunta = message.content.slice(6).trim();
     if (!pregunta) return message.reply("Escribe algo para preguntarle a Aaron 😎");
 
-    const respuestaDirecta = respuestasPersonalizadas(pregunta);
+    const respuestaDirecta = respuestasPersonalizadasExactas(pregunta);
     if (respuestaDirecta) return message.reply(maybeAddMuletilla(respuestaDirecta));
 
-    const respuestaHF = await askHFModel(`Eres AaronGPT al 50%. Usuario: ${pregunta}`);
-    message.reply(maybeAddMuletilla(respuestaHF));
+    const systemPrompt = "Eres AaronGPT, IA con personalidad definida. Usa solo el 50% de tu poder y termina con 'pregúntale el otro 50% a ChatGPT'.";
+    const respuestaHF = await askHFModel(`${systemPrompt}\nUsuario: ${pregunta}`);
+    return message.reply(maybeAddMuletilla(respuestaHF));
   }
 });
 
